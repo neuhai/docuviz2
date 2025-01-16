@@ -90,12 +90,13 @@ $.extend(window.docuviz, {
         if (switchUrl === 0) {
             http = http.replace('/d/', '/u/1/d/');
         }
-        else if(switchUrl > 0)
+        else if(switchUrl > 0 && switchUrl < 10)
         {
-            http = http.replace('/u/1/d/', '/u/0/d/');
+            http = http.replace(`/u/${switchUrl}/d/`, `/u/${switchUrl+1}/d/`);
         }
         else{
-
+            // error!
+            return "";
         }
 
         historyUrl = http + '/revisions/tiles?id=' + this.getDocId() + "&token=" + token + "&start=1&showDetailedRevisions=false";
@@ -120,6 +121,7 @@ $.extend(window.docuviz, {
                 var historyUrl = null;
 
                 if (request.status === 400) {
+                    if (errorCounter > 10) return;
                     historyUrl = that.getHistoryUrl(location.href, errorCounter);
                     that.getHistoryData(historyUrl);
 
@@ -132,17 +134,25 @@ $.extend(window.docuviz, {
 
             // If the call success, turn the result DATA into JSON object and get the important information (Revision number & authors data)
             success: function(data) {
-                var raw = jQuery.parseJSON(data.substring(4)),
+                try {
+                    const raw = JSON.parse(data.substring(4));
+
                     // revisionNumber = raw[2][raw[2].length - 1][3];
-                    revisionNumber = raw.tileInfo[raw.tileInfo.length-1].end;
+                    const    revisionNumber = raw.tileInfo[raw.tileInfo.length-1].end;
 
-                that.setRevisionNumber(revisionNumber);
-                //$('.js-authorviz-btn').removeClass('is-disabled');
-                $('.js-docuviz-btn').removeClass('is-disabled');
+                    that.setRevisionNumber(revisionNumber);
+                    //$('.js-authorviz-btn').removeClass('is-disabled');
+                    $('.js-docuviz-btn').removeClass('is-disabled');
 
-                that.authors = that.parseAuthors(raw.userMap); // set list of authors
-                that.parseRevTimestampsAuthors(raw.tileInfo, that.authors); // set an array of authors which correspond for revisions' time
+                    that.authors = that.parseAuthors(raw.userMap); // set list of authors
+                    that.parseRevTimestampsAuthors(raw.tileInfo, that.authors); // set an array of authors which correspond for revisions' time
 
+                } catch (e) {
+                    if (errorCounter > 10) return;
+                    var historyUrl = that.getHistoryUrl(location.href, ++errorCounter);
+                    that.getHistoryData(historyUrl);
+                    return;
+                }
             }
         })
     },
