@@ -1654,7 +1654,7 @@ const docuviz = {
         var reducedlogData = _.map(logData, function(val) {
             return val[1];
         });
-
+        // todo change to exact match, return -1 if not found, and fix the ctrl-A ctrl-V ..
         function binarySearch(arr, target) {
             let left = 0;
             let right = arr.length - 1;
